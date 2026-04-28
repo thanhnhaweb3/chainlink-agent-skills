@@ -32,7 +32,7 @@ Core source areas:
 | `src/interfaces` | Interfaces such as `IPolicyEngine`, `IPolicyProtected`, `IPolicy`, `IExtractor`, `IMapper` |
 | `src/policies` | Pre-built policies |
 | `src/extractors` | Calldata extractors |
-| `src/mappers` | Parameter mappers |
+| `src/libraries` | Shared libraries |
 | `docs` | Concepts, API guide/reference, custom policies tutorial, policy ordering, security |
 | `test` | Foundry tests |
 

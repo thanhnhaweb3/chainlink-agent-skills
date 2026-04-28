@@ -43,7 +43,7 @@ Use this file when an answer depends on current ACE repository facts, source cod
 | Interfaces | `https://github.com/smartcontractkit/chainlink-ace/tree/main/packages/policy-management/src/interfaces` |
 | Core contracts | `https://github.com/smartcontractkit/chainlink-ace/tree/main/packages/policy-management/src/core` |
 | Extractors | `https://github.com/smartcontractkit/chainlink-ace/tree/main/packages/policy-management/src/extractors` |
-| Mappers | `https://github.com/smartcontractkit/chainlink-ace/tree/main/packages/policy-management/src/mappers` |
+| Libraries | `https://github.com/smartcontractkit/chainlink-ace/tree/main/packages/policy-management/src/libraries` |
 
 ## Cross-Chain Identity
 
