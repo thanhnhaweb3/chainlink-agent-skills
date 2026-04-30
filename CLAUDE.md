@@ -49,6 +49,16 @@ Run agent evals for chainlink-ccip-skill, full suite
 Run agent evals for chainlink-data-feeds-skill, functional cases only
 ```
 
+For baseline-vs-skill comparisons, read and follow `evals/run-agent-ab-test.md`. This is the preferred no-API path when the goal is to prove whether a skill improves answers, identify regressions, or drive an improvement loop:
+
+```
+Run an agent A/B test for chainlink-cre-skill using mixed-chainlink
+Run an agent A/B test for chainlink-cre-skill using mixed-chainlink, then propose improvements
+Run an agent A/B test for chainlink-ccip-skill, smoke tier
+```
+
+The agent A/B protocol creates isolated baseline, skill-enabled, evaluator, and aggregator subagents. It writes generated artifacts under `evals/runs/<skill>/<tag>/`; those run artifacts are for local review and should not be committed unless explicitly requested.
+
 ### With API keys (promptfoo)
 
 If `ANTHROPIC_API_KEY` and `OPENAI_API_KEY` are set in `.env`:
@@ -69,6 +79,17 @@ The `eval.yml` workflow runs the smoke tier automatically on PRs that touch skil
 
 - **Smoke**: After any change to a skill's `SKILL.md` or `references/`, before bumping patch version, when adding new eval cases
 - **Full**: Before releases, after major refactors, or when smoke passes but you want full confidence
+
+### Autonomous improvement (autoimprove)
+
+Read and follow the protocol in `evals/improve-skill.md`. This runs an autonomous loop that iterates on a skill's instructions and references, using eval scores as the objective. The agent modifies the skill, runs smoke evals, keeps improvements, reverts regressions, and loops until stopped. Ask:
+
+```
+Improve chainlink-ccip-skill
+Improve chainlink-data-feeds-skill, tag apr21
+```
+
+Requires either API keys in `.env` (for promptfoo-based evals) or sufficient subagent budget (for agent-powered evals). Promptfoo is fastest when API keys are available; agent A/B is preferred when avoiding external model API usage.
 
 ## Conventions
 
