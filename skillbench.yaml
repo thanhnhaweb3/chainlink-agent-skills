@@ -10,9 +10,13 @@ harnesses:
   codex:
     models:
       - gpt-5.4-mini
+  gemini:
+    models:
+      - gemini-3-flash-preview
 
 skills:
   - id: chainlink-cre-skill
+    path: chainlink-cre-skill
     test_cases:
       - prompt: "How do I install the CRE CLI and initialize a new project? I want to use TypeScript."
       - prompt: "How do I set up CRE triggers including CRON, HTTP, and EVM log triggers?"
@@ -24,6 +28,7 @@ skills:
       - prompt: "What is the difference between deterministic and non-deterministic code in CRE workflows?"
 
   - id: chainlink-ccip-skill
+    path: chainlink-ccip-skill
     test_cases:
       - prompt: "Are Ethereum Sepolia and Base Sepolia connected by CCIP?"
       - prompt: "Write a Solidity contract that reads the Chainlink CCIP router and discovers supported tokens."
@@ -35,6 +40,7 @@ skills:
       - prompt: "How do I create and register a Chainlink Cross-Chain Token (CCT) for cross-chain compatibility?"
 
   - id: chainlink-data-feeds-skill
+    path: chainlink-data-feeds-skill
     test_cases:
       - prompt: "Write a Solidity contract that reads the ETH/USD price from a Chainlink price feed on Ethereum Sepolia. Include proper validation and tell me what address to use."
       - prompt: "How do I read Chainlink Data Feeds off-chain using a TypeScript application?"
@@ -46,6 +52,7 @@ skills:
       - prompt: "How do I monitor historical price data from Chainlink feeds?"
 
   - id: chainlink-data-streams-skill
+    path: chainlink-data-streams-skill
     test_cases:
       - prompt: "Build a Chainlink Data Streams WebSocket streamer with High Availability mode turned on. I care about reconnects, duplicate reports, and missing report gaps."
       - prompt: "How do I get access to Chainlink Data Streams and what authentication credentials do I need?"
@@ -57,6 +64,7 @@ skills:
       - prompt: "How do I handle reconnection logic and missing reports in a Data Streams WebSocket consumer?"
 
   - id: chainlink-ace-skill
+    path: chainlink-ace-skill
     test_cases:
       - prompt: "What is Chainlink Automated Compliance Engine based on the smartcontractkit/chainlink-ace repo, and who is it for?"
       - prompt: "How do I deploy the PolicyEngine contract from chainlink-ace and set up a custom compliance policy?"
