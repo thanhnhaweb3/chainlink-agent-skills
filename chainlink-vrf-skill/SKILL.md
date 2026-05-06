@@ -1,12 +1,12 @@
 ---
 name: chainlink-vrf-skill
-description: "Handle Chainlink VRF / VRF v2.5 prompts about supported-networks/address constants, coordinator or wrapper addresses, callbackGasLimit gas/security review, fulfillRandomWords, subscription vs direct funding, extraArgs/nativePayment, keyHash/gas lanes, LINK/native billing, VRF lottery bias, random words, verifiable randomness, VRFConsumerBaseV2, VRFConsumerBaseV2Plus, VRFV2WrapperConsumerBase, VRFV2PlusWrapperConsumerBase, or migration from VRF V1/V2. Read this skill and its references for address, gas, security, billing, migration, config, and code answers instead of answering from memory."
+description: "Help developers integrate Chainlink VRF into smart contracts. Use for subscription and direct-funding consumer contracts, requestRandomWords and fulfillRandomWords implementation, coordinator and wrapper address lookup, key hash and gas lane selection, LINK vs native token billing, callbackGasLimit sizing, bias and security review, and migrating from VRF V1 or V2 to v2.5. Trigger whenever the user mentions VRF, verifiable randomness, random number generation on-chain, requestRandomWords, VRFConsumerBaseV2Plus, or wants provably fair randomness in a smart contract, even if they do not say 'VRF' explicitly."
 license: MIT
 compatibility: Designed for AI agents that implement https://agentskills.io/specification, including Claude Code, Cursor Composer, and Codex-style workflows.
 allowed-tools: Read WebFetch Write Edit Bash
 metadata:
   purpose: Chainlink VRF v2.5 developer assistance and reference
-  version: "0.0.1"
+  version: "0.0.2"
 ---
 
 # Chainlink VRF Skill

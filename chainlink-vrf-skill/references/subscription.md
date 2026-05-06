@@ -8,10 +8,10 @@ The subscription method is the recommended approach for most applications. You f
 
 ## Setup Steps
 
-1. Deploy your consumer contract with a subscription ID.
-2. Create a subscription at vrf.chain.link (or programmatically via the coordinator).
-3. Fund the subscription with LINK or native tokens.
-4. Add your consumer contract address to the subscription's allowlist.
+1. Create a subscription at vrf.chain.link — this gives you a **subscription ID**.
+2. Fund the subscription with LINK or native tokens.
+3. Deploy your consumer contract, passing the subscription ID to the constructor.
+4. Copy the deployed contract address and add it as an approved consumer on the subscription.
 5. Call `requestRandomWords` from your contract.
 
 ## Complete Consumer Contract
@@ -112,14 +112,23 @@ contract VRFSubscriptionConsumer is VRFConsumerBaseV2Plus {
 ## Package Installation
 
 ```bash
-# npm / Foundry
+# npm
 npm install @chainlink/contracts
-
-# Foundry remapping
-forge install smartcontractkit/chainlink-brownie-contracts
-# Add to remappings.txt:
-# @chainlink/contracts/=lib/chainlink-brownie-contracts/contracts/
 ```
+
+```bash
+# Foundry — install from chainlink-evm at a tagged release
+forge install smartcontractkit/chainlink-evm@contracts-v1.5.0
+```
+
+Add to `foundry.toml`:
+```toml
+remappings = [
+  '@chainlink/contracts/=lib/chainlink-evm/contracts/',
+]
+```
+
+See [chainlink-evm releases](https://github.com/smartcontractkit/chainlink-evm/releases) for available `contracts-v*` tags.
 
 ## Key Parameters
 
@@ -186,7 +195,7 @@ COORDINATOR.cancelSubscription(subId, receivingAddress);
 4. Coordinator verifies proof, then calls `fulfillRandomWords` on your contract
 5. Your contract stores/uses the values, emits `RequestFulfilled`
 
-Typical latency: 1–3 minutes depending on network congestion and `requestConfirmations`.
+Fulfillment typically takes a few blocks after the request is included. Latency depends on network conditions and `requestConfirmations`.
 
 ## Security Notes
 

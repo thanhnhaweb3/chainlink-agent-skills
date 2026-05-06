@@ -5,13 +5,14 @@
 The direct funding method lets a consumer contract pay for each VRF request directly, without maintaining a subscription. The contract must hold enough LINK or native tokens before calling `requestRandomWords`. Billing is **upfront** — the cost is estimated and charged at request time.
 
 Use direct funding when:
+
 - You need a one-off randomness request.
 - You don't want to manage a subscription account.
 - Each request is infrequent enough that subscription overhead is not worth it.
 
 For recurring requests, prefer the subscription method (`subscription.md`).
 
-**Official docs:** https://docs.chain.link/vrf/v2-5/direct-funding/get-a-random-number
+**Official docs:** https://docs.chain.link/vrf/v2-5/direct-funding/get-a-random-number.md
 
 ## Complete Consumer Contract
 
@@ -26,16 +27,13 @@ import {ConfirmedOwner} from "@chainlink/contracts/src/v0.8/shared/access/Confir
 
 contract VRFDirectFundingConsumer is VRFV2PlusWrapperConsumerBase, ConfirmedOwner {
     event RequestSent(uint256 requestId, uint32 numWords);
-    event RequestFulfilled(
-        uint256 requestId,
-        uint256[] randomWords,
-        uint256 payment
-    );
+    event RequestFulfilled(uint256 requestId, uint256[] randomWords, uint256 payment);
 
-    error InsufficientFunds(uint256 available, uint256 required);
+    error RequestNotFound(uint256 requestId);
+    error WithdrawFailed();
 
     struct RequestStatus {
-        uint256 paid;
+        uint256 paid;       // amount paid in juels (LINK) or wei (native)
         bool fulfilled;
         uint256[] randomWords;
         bool native;
@@ -56,8 +54,8 @@ contract VRFDirectFundingConsumer is VRFV2PlusWrapperConsumerBase, ConfirmedOwne
     {}
 
     /**
-     * @param enableNativePayment true = pay in native token, false = pay in LINK
-     * Contract must hold sufficient balance of the chosen token before calling.
+     * @param enableNativePayment true = pay in native token, false = pay in LINK.
+     * The contract must hold sufficient balance of the chosen token before calling.
      */
     function requestRandomWords(
         bool enableNativePayment
@@ -95,36 +93,36 @@ contract VRFDirectFundingConsumer is VRFV2PlusWrapperConsumerBase, ConfirmedOwne
         return requestId;
     }
 
+    // VRFV2PlusWrapperConsumerBase uses memory (not calldata) for randomWords
     function fulfillRandomWords(
         uint256 _requestId,
         uint256[] memory _randomWords
     ) internal override {
-        require(s_requests[_requestId].paid > 0, "request not found");
+        if (s_requests[_requestId].paid == 0) revert RequestNotFound(_requestId);
         s_requests[_requestId].fulfilled = true;
         s_requests[_requestId].randomWords = _randomWords;
-        emit RequestFulfilled(
-            _requestId,
-            _randomWords,
-            s_requests[_requestId].paid
-        );
+        emit RequestFulfilled(_requestId, _randomWords, s_requests[_requestId].paid);
     }
 
     function getRequestStatus(
         uint256 _requestId
     ) external view returns (uint256 paid, bool fulfilled, uint256[] memory randomWords) {
-        require(s_requests[_requestId].paid > 0, "request not found");
+        if (s_requests[_requestId].paid == 0) revert RequestNotFound(_requestId);
         RequestStatus memory request = s_requests[_requestId];
         return (request.paid, request.fulfilled, request.randomWords);
     }
 
     function withdrawLink() external onlyOwner {
         LinkTokenInterface link = LinkTokenInterface(i_linkAddress);
-        require(link.transfer(msg.sender, link.balanceOf(address(this))), "transfer failed");
+        uint256 balance = link.balanceOf(address(this));
+        bool success = link.transfer(msg.sender, balance);
+        if (!success) revert WithdrawFailed();
     }
 
-    function withdrawNative(uint256 amount) external onlyOwner {
-        (bool success, ) = payable(msg.sender).call{value: amount}("");
-        require(success, "transfer failed");
+    function withdrawNative() external onlyOwner {
+        uint256 balance = address(this).balance;
+        (bool success, ) = payable(msg.sender).call{value: balance}("");
+        if (!success) revert WithdrawFailed();
     }
 
     receive() external payable {}
@@ -133,24 +131,26 @@ contract VRFDirectFundingConsumer is VRFV2PlusWrapperConsumerBase, ConfirmedOwne
 
 ## Key Differences from Subscription
 
-| Aspect | Subscription | Direct Funding |
-|---|---|---|
-| Base contract | `VRFConsumerBaseV2Plus` | `VRFV2PlusWrapperConsumerBase` |
-| Funding | Central subscription account | Contract holds tokens directly |
-| Billing timing | Post-fulfillment (actual gas used) | Upfront (estimated at request time) |
-| Request return | Single `uint256 requestId` | Tuple `(uint256 requestId, uint256 reqPrice)` |
-| Constructor | Takes coordinator address | Takes **only** wrapper address |
-| Coordinator access | `s_vrfCoordinator` from base | Via the wrapper internally |
+| Aspect                     | Subscription                       | Direct Funding                                |
+| -------------------------- | ---------------------------------- | --------------------------------------------- |
+| Base contract              | `VRFConsumerBaseV2Plus`            | `VRFV2PlusWrapperConsumerBase`                |
+| Funding                    | Central subscription account       | Contract holds tokens directly                |
+| Billing timing             | Post-fulfillment (actual gas used) | Upfront (estimated at request time)           |
+| Request return             | Single `uint256 requestId`         | Tuple `(uint256 requestId, uint256 reqPrice)` |
+| Constructor                | Takes coordinator address          | Takes **only** wrapper address                |
+| `fulfillRandomWords` param | `uint256[] calldata`               | `uint256[] memory`                            |
 
 ## v2.5 Constructor Change (Important)
 
 V2 wrapper constructor required both LINK and wrapper addresses:
+
 ```solidity
 // V2 — DO NOT USE
 VRFV2WrapperConsumerBase(linkAddress, wrapperAddress)
 ```
 
 V2.5 wrapper constructor takes only the wrapper address:
+
 ```solidity
 // v2.5 — CORRECT
 VRFV2PlusWrapperConsumerBase(wrapperAddress)
@@ -158,30 +158,21 @@ VRFV2PlusWrapperConsumerBase(wrapperAddress)
 
 ## Funding the Contract
 
-**LINK funding (Sepolia example):**
-```bash
-# Transfer LINK to the contract address using a wallet or script
-# Contract address must hold LINK before calling requestRandomWords(false)
-```
+**LINK:**
+Fund the contract by transferring LINK to its address. The contract must hold LINK before calling `requestRandomWords(false)`.
 
-**Native token funding:**
+**Native token:**
+
 ```solidity
 // Send ETH to the contract; it accepts via receive()
 (bool ok,) = contractAddress.call{value: 0.01 ether}("");
 ```
 
-Typical costs on Sepolia:
-- LINK: ~0.877 LINK per request
-- Native: ~0.001 ETH per request
-
-Always check actual costs on the network you're targeting — gas prices vary significantly.
-
-## Wrapper Addresses
-
-The wrapper address is required in the constructor. Get it from `supported-networks.md` or https://docs.chain.link/vrf/v2-5/supported-networks.
+Costs vary significantly with gas prices — always check on the target network before deploying.
 
 ## Security Notes
 
-- Ensure the contract has sufficient balance **before** calling `requestRandomWords`. The call reverts if underfunded.
+- Ensure the contract holds sufficient balance **before** calling `requestRandomWords`. The call reverts if underfunded.
 - The `paid` field in `RequestStatus` records the upfront cost — use it for accounting.
+- Get the wrapper address from `supported-networks.md` or https://docs.chain.link/vrf/v2-5/supported-networks.md — never hardcode it without verifying.
 - This example code is **unaudited**. Conduct a security audit before production deployment.

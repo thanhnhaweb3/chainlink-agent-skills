@@ -67,13 +67,13 @@ skills:
     path: chainlink-vrf-skill
     test_cases:
       - prompt: "Write a Solidity contract that uses Chainlink VRF with the subscription method to request 2 random words on Ethereum Sepolia, paying in native ETH."
-      - prompt: "Build a VRF direct funding consumer on Arbitrum mainnet that requests one random word without a subscription, and lets the owner withdraw remaining LINK."
+      - prompt: "Build a Chainlink VRF direct funding consumer on Arbitrum Sepolia testnet that requests one random word without a subscription, and lets the owner withdraw remaining LINK."
       - prompt: "Patch this VRF V2 subscription consumer to v2.5 and explain each breaking change: it imports VRFConsumerBaseV2, stores uint64 s_subscriptionId, calls COORDINATOR.requestRandomWords(keyHash, subId, confirmations, callbackGasLimit, numWords), and uses uint256[] memory randomWords in fulfillRandomWords."
       - prompt: "I'm choosing between VRF subscription or direct funding for an NFT mint contract; compare billing timing, required base contracts, setup steps, and when each method is the safer choice."
-      - prompt: "Review this consumer design before I deploy: fulfillRandomWords writes 4 storage slots, emits an event, and may loop over 25 winners. Recommend a callbackGasLimit sizing workflow, explain what happens if the callback runs out of gas, and show what constants/config I should expose."
-      - prompt: "Create a Solidity constants snippet and add a note about where keyHash values must come from for subscription requests."
-      - prompt: "Review this Chainlink VRF-based lottery flow for bias: users can enter until requestRandomWords is called, the owner can cancel a pending round, and fulfillRandomWords picks winners from the entrants array. Identify manipulation risks and propose a safer request/fulfillment state machine."
-      - prompt: "Add two VRF v2.5 subscription request functions to my consumer: requestWithLink() and requestWithNative(). Show the VRFV2PlusClient.RandomWordsRequest struct for each and explain exactly how extraArgs / ExtraArgsV1.nativePayment switches LINK vs native payment."
+      - prompt: "My fulfillRandomWords writes 4 storage slots, emits an event, and loops over up to 25 winners. How do I size callbackGasLimit, what happens if the callback runs out of gas, and what config should I expose as public state variables?"
+      - prompt: "Show me the coordinator address and key hash I need for a Chainlink VRF subscription consumer on Ethereum Sepolia."
+      - prompt: "My VRF lottery lets users enter until requestRandomWords is called, the owner can cancel a pending round, and fulfillRandomWords picks winners. What are the manipulation risks and how do I fix them?"
+      - prompt: "Add two Chainlink VRF subscription request functions to my consumer: requestWithLink() and requestWithNative(). Show the VRFV2PlusClient.RandomWordsRequest struct for each and explain exactly how extraArgs / ExtraArgsV1.nativePayment switches LINK vs native payment."
 
   - id: chainlink-ace-skill
     path: chainlink-ace-skill
