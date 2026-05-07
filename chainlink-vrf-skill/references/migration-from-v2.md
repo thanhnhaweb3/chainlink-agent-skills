@@ -4,7 +4,7 @@
 
 VRF V2 coordinators are being deprecated. V2 contracts will not work with v2.5 coordinator addresses. The changes are all breaking — V2 code requires modification before it will compile against v2.5 contracts.
 
-**Official migration guide:** https://docs.chain.link/vrf/v2-5/migration-from-v2
+**Official migration guide:** https://docs.chain.link/vrf/v2-5/migration-from-v2.md
 
 ## Detection Cues (V2 / V1 Patterns to Spot)
 
@@ -188,7 +188,7 @@ V2 and v2.5 use **different coordinator addresses**. After migrating the contrac
 - The subscription (v2 subscriptions are not carried over to v2.5)
 - Any hardcoded contract addresses in scripts or deployment configs
 
-Get v2.5 addresses from `supported-networks.md` or https://docs.chain.link/vrf/v2-5/supported-networks.
+Get v2.5 addresses from `supported-networks.md`.
 
 ## Common Compile Errors After Migration
 

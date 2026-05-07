@@ -1,91 +1,88 @@
 # VRF v2.5 Security and Best Practices
 
-## Use requestId for Fulfillment Matching
+## Use `requestId` to Match Randomness Requests with Their Fulfillment
 
-Match randomness fulfillments to requests using `requestId`, not request order. Validators can control the order in which transactions are included, so assuming first-in first-out is unsafe.
+If your contract can have multiple VRF requests in flight simultaneously, the order in which fulfillments arrive cannot be used to drive user-significant behavior. Validators control the order transactions appear on-chain, so requests `A`, `B`, `C` may be fulfilled in any order — `C`, `A`, `B` is just as likely as `A`, `B`, `C`.
+
+Always use `requestId` to match a fulfillment back to its originating request. Never assume FIFO ordering.
 
 ## Choose a Safe Block Confirmation Count
 
-`requestConfirmations` controls how many blocks must be mined before your request is fulfilled. Higher values make rewrite attacks more expensive. Tune to your application's risk level:
-- Low-stakes games: 3 (minimum)
-- NFT mints, mid-value prizes: 5–10
-- High-value lotteries: 20+
+Validators can in principle rewrite history to put a randomness request into a different block, producing a different VRF output. This does not let a validator predetermine or predict the value — only re-roll for a fresh one that might or might not be advantageous to them.
+
+Set `requestConfirmations` high enough that the cost of a chain rewrite exceeds the value at risk in your application. There is no universal correct number — it depends on the chain and your application's value-at-risk. Higher = more secure but slower fulfillment.
 
 ## Do Not Allow Re-Requesting or Cancellation
 
-Once a request is made, do not allow re-requesting before fulfillment. Allowing cancellation lets a party discard unfavorable outcomes and retry until they get a good one.
+Re-requesting or cancelling randomness is an incorrect use of VRF v2.5. Allowing it lets any party discard unfavorable randomness and try again until they get a result they prefer. Do not implement re-request or cancellation paths for specific commitments.
+
+## Don't Accept Inputs After Requesting Randomness
+
+Once you call `requestRandomWords`, do not accept further user inputs that affect the outcome until fulfillment lands. Consider an NFT mint that depends on user actions:
+
+1. Record the user actions that influence the mint.
+2. **Stop accepting further user actions that affect the outcome** and issue the randomness request.
+3. On fulfillment, mint the NFT.
+
+If you keep accepting inputs after the request, an attacker who rewrites the chain can supply additional inputs that exploit the new outcome — breaking the cryptoeconomic security guarantees.
+
+## `fulfillRandomWords` Must Not Revert
+
+If `fulfillRandomWords` reverts, the VRF service will not retry it. The randomness is lost. Keep callback logic minimal — store the random values and emit an event. Move complex downstream logic (winner selection, token minting, payouts) into separate transactions invoked by you, your users, or a Chainlink Automation node.
 
 ```solidity
-// BAD — cancellation allows bias
-function rollDie() external {
-    if (pendingRequest) { cancelRequest(); }
-    requestRandomWords(false);
-}
-
-// GOOD — enforce one-pending-at-a-time, no cancellation path
-function rollDie() external {
-    require(!s_requests[lastRequestId].exists || s_requests[lastRequestId].fulfilled, "request pending");
-    requestRandomWords(false);
-}
-```
-
-## Cut Off Inputs After Requesting
-
-Do not accept bids, bets, or user-supplied inputs after a randomness request is in flight. An attacker who learns a rewrite is happening can submit additional inputs to exploit the changed outcome.
-
-## fulfillRandomWords Must Not Revert
-
-If `fulfillRandomWords` reverts, the VRF service will not retry — the randomness is lost. Keep callback logic minimal: store the random values and emit an event. Execute downstream logic (winner selection, token minting) in a separate transaction.
-
-```solidity
-// GOOD — store first, act later
 function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) internal override {
-    s_results[requestId] = randomWords;
+    s_requests[requestId].randomWords = randomWords;
+    s_requests[requestId].fulfilled = true;
     emit RandomnessFulfilled(requestId);
-    // winner selection happens in a separate claimPrize() call
+    // winner selection / NFT minting happens in a separate claimPrize() call
 }
 ```
 
-## Never Use Block Randomness as Fallback
+## Use `VRFConsumerBaseV2Plus` for Subscription Consumers
 
-`block.prevrandao`, `block.difficulty`, `blockhash`, and `block.timestamp` are manipulable by validators and must never be used as randomness sources or fallbacks. See [Why not RANDAO / block.prevrandao?](https://stackoverflow.com/questions/73938799/chainlink-vrf-or-randao) for a detailed explanation.
+For the subscription method, inherit from `VRFConsumerBaseV2Plus`. It includes a check that fulfillments come from `VRFCoordinatorV2_5`, which is a critical security boundary.
+
+Do not override `rawFulfillRandomness` — only implement `fulfillRandomWords`. Overriding the wrapper bypasses the coordinator authentication check.
+
+## Avoid ERC-4337 Smart-Account Wallets for Subscription Management
+
+Pre-signed ERC-4337 `UserOperation`s can be executed by any bundler until they expire. If a `UserOperation` executes inside a fulfillment transaction callback, the subscription management call can no-op, delaying or preventing the change. Use an EOA or a standard multisig for subscription management.
+
+## Keep Subscription Balance Well Above the Minimum Balance
+
+Fulfillments require sufficient subscription balance at processing time. If the balance sits near the minimum and multiple consumers make concurrent requests, fulfillments can be delayed. After topping up, previous in-flight requests can take additional time to process.
+
+Set up alerting on subscription balance and refill before it approaches the minimum.
+
+## Never Use Block Data as Randomness (Common Anti-Pattern)
+
+`block.prevrandao`, `block.difficulty`, `blockhash`, and `block.timestamp` are not safe sources of randomness for any value-at-risk application. They are validator-influenceable and must never be used as randomness sources or as a fallback when VRF is unavailable.
+
+For a detailed comparison between Chainlink VRF and RANDAO (`block.prevrandao` on Ethereum), see [Chainlink VRF vs RANDAO on Stack Overflow](https://stackoverflow.com/questions/73938799/chainlink-vrf-or-randao). Short version: RANDAO is biasable by the proposer (who can choose to skip a slot), so it is not suitable as a primitive for high-value randomness consumers.
 
 ```solidity
 // NEVER DO THIS
 uint256 rand = uint256(keccak256(abi.encodePacked(block.timestamp, msg.sender)));
 uint256 rand = uint256(blockhash(block.number - 1));
+uint256 rand = block.prevrandao;
 ```
 
-## Access Control on requestRandomWords
+If randomness isn't available, wait or revert — never substitute insecure alternatives.
 
-Restrict who can trigger requests. An unrestricted `requestRandomWords` lets anyone drain your subscription.
+## Sizing `callbackGasLimit`
 
-```solidity
-function requestRandomWords(bool enableNativePayment) external onlyOwner returns (uint256) { ... }
-```
+The callback gas limit must cover the entire `fulfillRandomWords` execution. If it's too low, the callback reverts and the randomness is lost — it cannot be re-requested with the same value (and re-requesting at all violates the rule above).
 
-## Subscription Balance
+Measure your callback's actual gas usage on a testnet, then add a 20–30% buffer. The maximum allowed is 2,500,000. Per-network maximums are listed at https://docs.chain.link/vrf/v2-5/supported-networks.md.
 
-Keep subscription balance well above the minimum buffer. If balance drops to minimum during concurrent requests, new requests may stall and restart only after funds are added — which itself can take time.
+Keep the callback small (store + emit) for two reasons:
+1. Lower gas, lower cost.
+2. Smaller chance of reverting from any subtle issue.
 
-## Avoid ERC-4337 Smart-Account Wallets for Subscription Management
+## Testing with `VRFCoordinatorV2_5Mock`
 
-Pre-signed operations on account-abstracted wallets can execute during your callback, creating race conditions. Use an EOA or standard multisig for subscription management.
-
-## Gas Limit Sizing
-
-**Always measure `callbackGasLimit` on testnet before mainnet.**
-
-If the callback exceeds the limit it reverts and the randomness is lost — you cannot re-request the same values. Rough estimates:
-- Storage write: ~20,000 gas each
-- Event emission: ~375 gas + 8 gas/byte
-- External call: 2,300 gas minimum
-
-Add a 20–30% buffer. Maximum allowed: 2,500,000 gas.
-
-## Testing with VRFCoordinatorV2_5Mock
-
-For unit tests, use the mock coordinator from `@chainlink/contracts`:
+The `@chainlink/contracts` package ships a mock coordinator for unit-testing subscription consumers without hitting a live network. The mock works for subscription consumers; for direct-funding wrapper consumers, see the chainlink-evm repo for additional mocks.
 
 ```solidity
 import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
@@ -93,10 +90,11 @@ import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VR
 contract MyConsumerTest is Test {
     VRFCoordinatorV2_5Mock coordinator;
     MyConsumer consumer;
+    bytes32 keyHash = bytes32(uint256(1)); // any value works for the mock
 
     function setUp() public {
         // baseFee, gasPriceLink, weiPerUnitLink
-        coordinator = new VRFCoordinatorV2_5Mock(100000000000000000, 1000000000, 4113797966605025);
+        coordinator = new VRFCoordinatorV2_5Mock(0.1 ether, 1 gwei, 4113797966605025);
         uint256 subId = coordinator.createSubscription();
         coordinator.fundSubscription(subId, 10 ether);
         consumer = new MyConsumer(address(coordinator), subId, keyHash);
@@ -105,25 +103,12 @@ contract MyConsumerTest is Test {
 
     function test_requestAndFulfill() public {
         uint256 requestId = consumer.requestRandomWords(false);
-        // Simulate fulfillment
+        // The mock fulfills synchronously
         coordinator.fulfillRandomWords(requestId, address(consumer));
-        // Assert results
         (, uint256[] memory words) = consumer.getRequestStatus(requestId);
         assertEq(words.length, 2);
     }
 }
 ```
 
-## Production Checklist
-
-- [ ] Tested end-to-end on testnet with real VRF fulfillments
-- [ ] `callbackGasLimit` measured on testnet with a 20–30% buffer
-- [ ] `requestConfirmations` set for the risk level of your application
-- [ ] No re-requesting or cancellation after a request is made
-- [ ] No input acceptance after a request is in flight
-- [ ] `fulfillRandomWords` cannot revert; downstream logic is deferred
-- [ ] No fallback to block-based randomness
-- [ ] Subscription balance monitoring and alerting configured
-- [ ] Security audit completed by an independent auditor
-
-This example code is **unaudited** and provided for educational purposes only.
+This example code is **unaudited** and provided for educational purposes only. Do not deploy to production without an independent security audit.

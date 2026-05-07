@@ -2,16 +2,18 @@
 
 ## Overview
 
-The subscription method is the recommended approach for most applications. You fund a subscription account with LINK or native tokens and add consumer contracts as authorized spenders. Billing is post-fulfillment — the actual gas cost is deducted after the callback completes.
+The subscription method is the recommended approach for most applications. You fund a subscription account with LINK or native coin and add consumer contracts as authorized spenders. Billing is post-fulfillment — the actual gas cost is deducted after the callback completes.
 
-**Official docs:** https://docs.chain.link/vrf/v2-5/subscription/get-a-random-number
+**Official docs:** https://docs.chain.link/vrf/v2-5/subscription/get-a-random-number.md
 
 ## Setup Steps
 
-1. Create a subscription at vrf.chain.link — this gives you a **subscription ID**.
-2. Fund the subscription with LINK or native tokens.
-3. Deploy your consumer contract, passing the subscription ID to the constructor.
-4. Copy the deployed contract address and add it as an approved consumer on the subscription.
+1. Ask the user if they want to create a subscription at vrf.chain.link. 
+    1a. If they do, get their **subscription ID**.
+    1b. If not, use Managing Subscriptions to write functionality into the contract.
+2. Deploy your consumer contract.
+3. Fund the subscription with LINK or native coin.
+4. Add the contract as an approved consumer for the subscription ID.
 5. Call `requestRandomWords` from your contract.
 
 ## Complete Consumer Contract
@@ -45,9 +47,20 @@ contract VRFSubscriptionConsumer is VRFConsumerBaseV2Plus {
     // Replace with the appropriate key hash for your network from supported-networks.md
     bytes32 public keyHash;
 
-    uint32 public callbackGasLimit = 100_000;    // Adjust based on your fulfillRandomWords logic
-    uint16 public requestConfirmations = 3;        // Minimum 3; higher = more security
-    uint32 public numWords = 2;                    // How many random values to request
+    // Depends on the number of requested values that you want sent to the
+    // fulfillRandomWords() function. Storing each word costs about 20,000 gas,
+    // so 60,000 is a safe default for this example contract. Test and adjust
+    // this limit based on the network that you select, the size of the request,
+    // and the processing of the callback request in the fulfillRandomWords()
+    // function.
+    uint32 public callbackGasLimit = 60_000;
+
+    // The default is 3, but you can set this higher if more secuirty is necessary.
+    uint16 public requestConfirmations = 3;
+
+    // For this example, retrieve 1 random value in one request.
+    // Cannot exceed VRFCoordinatorV2_5.MAX_NUM_WORDS.
+    uint32 public numWords = 2;
 
     constructor(
         address coordinatorAddress,
@@ -59,8 +72,8 @@ contract VRFSubscriptionConsumer is VRFConsumerBaseV2Plus {
     }
 
     /**
-     * @param enableNativePayment true = pay in native token, false = pay in LINK
-     * Pass true only if you funded the subscription with native tokens.
+     * @param enableNativePayment true = pay in native coin, false = pay in LINK
+     * Pass true only if you funded the subscription with native coin.
      */
     function requestRandomWords(
         bool enableNativePayment
@@ -161,7 +174,7 @@ extraArgs: VRFV2PlusClient._argsToBytes(
 
 ```solidity
 extraArgs: VRFV2PlusClient._argsToBytes(
-    VRFV2PlusClient.ExtraArgsV1({nativePayment: true}) // Native token payment
+    VRFV2PlusClient.ExtraArgsV1({nativePayment: true}) // Native coin payment
 )
 ```
 
@@ -174,17 +187,19 @@ Create and manage subscriptions at: https://vrf.chain.link
 Or programmatically:
 
 ```solidity
+IVRFCoordinatorV2Plus coordinator = IVRFCoordinatorV2Plus(coordinatorAddress);
+
 // Create a subscription
-uint256 subId = COORDINATOR.createSubscription();
+uint256 subId = coordinator.createSubscription();
 
 // Fund with LINK (using ERC-677 transferAndCall)
-LINK.transferAndCall(address(COORDINATOR), amount, abi.encode(subId));
+LINK.transferAndCall(address(coordinator), amount, abi.encode(subId));
 
 // Add a consumer
-COORDINATOR.addConsumer(subId, consumerAddress);
+coordinator.addConsumer(subId, consumerAddress);
 
 // Cancel and withdraw
-COORDINATOR.cancelSubscription(subId, receivingAddress);
+coordinator.cancelSubscription(subId, receivingAddress);
 ```
 
 ## Request Lifecycle

@@ -2,8 +2,6 @@
 
 **Always verify addresses and key hashes against the live docs before deploying.** If any value here conflicts with https://docs.chain.link/vrf/v2-5/supported-networks.md, treat the docs as authoritative.
 
-**Official source (use .md endpoint):** https://docs.chain.link/vrf/v2-5/supported-networks.md
-
 ---
 
 ## Mainnet Networks
@@ -56,7 +54,7 @@
   - 500 gwei: `0xeb0f72532fed5c94b4caf7b49caf454b35a729608a441101b9269efb7efe2c6c`
   - 1000 gwei: `0xb94a4fdb12830e15846df59b27d7c5d92c9c24c10cf6ae49655681ba560848dd`
 - **Max Gas Limit:** 2,500,000
-- **Note:** BNB Chain Bridge LINK is not ERC-677. Use PegSwap to convert before funding VRF.
+- **Note:** BNB Chain Bridge LINK is not ERC-677. Use PegSwap (see `billing.md`) to convert before funding VRF.
 
 ### OP Mainnet
 - **VRF Coordinator:** `0x5FE58960F730153eb5A84a47C51BD4E58302E1c8`
@@ -73,7 +71,7 @@
 - **VRF Wrapper:** `0xc8F13422c49909F4Ec24BF65EDFBEbe410BB9D7c`
 - **Key Hashes:** see https://docs.chain.link/vrf/v2-5/supported-networks.md for current values
 - **Max Gas Limit:** 2,500,000
-- **Note:** Polygon Bridge LINK is not ERC-677. Use PegSwap to convert before funding VRF.
+- **Note:** Polygon Bridge LINK is not ERC-677. Use PegSwap (see `billing.md`) to convert before funding VRF.
 
 ### Ronin Mainnet
 - **VRF Coordinator:** `0xa18FD3db9B869AD2A8c55267e0D54dbf6ECEbEda`

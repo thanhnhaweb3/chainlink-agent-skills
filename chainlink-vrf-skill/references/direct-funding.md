@@ -2,7 +2,7 @@
 
 ## Overview
 
-The direct funding method lets a consumer contract pay for each VRF request directly, without maintaining a subscription. The contract must hold enough LINK or native tokens before calling `requestRandomWords`. Billing is **upfront** — the cost is estimated and charged at request time.
+The direct funding method lets a consumer contract pay for each VRF request directly, without maintaining a subscription. The contract must hold enough LINK or native coin before calling `requestRandomWords`. Billing is **upfront** — the cost is estimated and charged at request time.
 
 Use direct funding when:
 
@@ -43,8 +43,18 @@ contract VRFDirectFundingConsumer is VRFV2PlusWrapperConsumerBase, ConfirmedOwne
     uint256[] public requestIds;
     uint256 public lastRequestId;
 
+    // Depends on the number of requested values that you want sent to the
+    // fulfillRandomWords() function. Test and adjust
+    // this limit based on the network that you select, the size of the request,
+    // and the processing of the callback request in the fulfillRandomWords()
+    // function.
     uint32 public callbackGasLimit = 100_000;
+
+    // The default is 3, but you can set this higher.
     uint16 public requestConfirmations = 3;
+
+    // For this example, retrieve 2 random values in one request.
+    // Cannot exceed VRFV2Wrapper.getConfig().maxNumWords.
     uint32 public numWords = 2;
 
     // Pass only the wrapper address — no LINK token address (v2.5 change from V2)
@@ -54,7 +64,7 @@ contract VRFDirectFundingConsumer is VRFV2PlusWrapperConsumerBase, ConfirmedOwne
     {}
 
     /**
-     * @param enableNativePayment true = pay in native token, false = pay in LINK.
+     * @param enableNativePayment true = pay in native coin, false = pay in LINK.
      * The contract must hold sufficient balance of the chosen token before calling.
      */
     function requestRandomWords(
@@ -112,16 +122,14 @@ contract VRFDirectFundingConsumer is VRFV2PlusWrapperConsumerBase, ConfirmedOwne
         return (request.paid, request.fulfilled, request.randomWords);
     }
 
-    function withdrawLink() external onlyOwner {
-        LinkTokenInterface link = LinkTokenInterface(i_linkAddress);
-        uint256 balance = link.balanceOf(address(this));
-        bool success = link.transfer(msg.sender, balance);
+    // i_linkToken is inherited from VRFV2PlusWrapperConsumerBase
+    function withdrawLink(address beneficiary, uint256 amount) external onlyOwner {
+        bool success = i_linkToken.transfer(beneficiary, amount);
         if (!success) revert WithdrawFailed();
     }
 
-    function withdrawNative() external onlyOwner {
-        uint256 balance = address(this).balance;
-        (bool success, ) = payable(msg.sender).call{value: balance}("");
+    function withdrawNative(address beneficiary, uint256 amount) external onlyOwner {
+        (bool success, ) = beneficiary.call{value: amount}("");
         if (!success) revert WithdrawFailed();
     }
 
@@ -158,17 +166,7 @@ VRFV2PlusWrapperConsumerBase(wrapperAddress)
 
 ## Funding the Contract
 
-**LINK:**
-Fund the contract by transferring LINK to its address. The contract must hold LINK before calling `requestRandomWords(false)`.
-
-**Native token:**
-
-```solidity
-// Send ETH to the contract; it accepts via receive()
-(bool ok,) = contractAddress.call{value: 0.01 ether}("");
-```
-
-Costs vary significantly with gas prices — always check on the target network before deploying.
+Simply transfer LINK or native coin to the contract to fund it. Use `billing.md` for calculation on how much to transfer.
 
 ## Security Notes
 

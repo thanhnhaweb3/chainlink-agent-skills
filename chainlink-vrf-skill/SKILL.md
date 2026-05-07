@@ -1,12 +1,12 @@
 ---
 name: chainlink-vrf-skill
-description: "Help developers integrate Chainlink VRF into smart contracts. Use for subscription and direct-funding consumer contracts, requestRandomWords and fulfillRandomWords implementation, coordinator and wrapper address lookup, key hash and gas lane selection, LINK vs native token billing, callbackGasLimit sizing, bias and security review, and migrating from VRF V1 or V2 to v2.5. Trigger whenever the user mentions VRF, verifiable randomness, random number generation on-chain, requestRandomWords, VRFConsumerBaseV2Plus, or wants provably fair randomness in a smart contract, even if they do not say 'VRF' explicitly."
+description: "Help developers integrate Chainlink VRF into smart contracts. Trigger whenever the user mentions VRF, verifiable randomness, random number generation on-chain, requestRandomWords, VRFConsumerBaseV2Plus, or wants provably fair randomness in a smart contract, even if they do not say 'VRF' explicitly."
 license: MIT
 compatibility: Designed for AI agents that implement https://agentskills.io/specification, including Claude Code, Cursor Composer, and Codex-style workflows.
 allowed-tools: Read WebFetch Write Edit Bash
 metadata:
   purpose: Chainlink VRF v2.5 developer assistance and reference
-  version: "0.0.2"
+  version: "0.0.1"
 ---
 
 # Chainlink VRF Skill
@@ -23,7 +23,7 @@ Route VRF requests to the simplest valid path. Generate working VRF v2.5 code on
 4. Read [references/migration-from-v2.md](references/migration-from-v2.md) when you detect V1 or V2 patterns in user-supplied code (`VRFConsumerBaseV2`, `VRFConsumerBase`, positional `requestRandomWords`, `uint64` subscription IDs, `VRFV2WrapperConsumerBase`, or `memory` randomWords in a subscription consumer) or when the user asks how to migrate.
 5. Read [references/billing.md](references/billing.md) only when the user asks about costs, LINK vs native payment, subscription funding, or premium percentages.
 6. Read [references/supported-networks.md](references/supported-networks.md) only when the user needs coordinator addresses, wrapper addresses, LINK token addresses, or key hashes for a specific network.
-7. Read [references/security-and-best-practices.md](references/security-and-best-practices.md) only when the user asks about security, bias resistance, gas limit sizing, request cancellation, or production readiness.
+7. Read [references/security-and-best-practices.md](references/security-and-best-practices.md) only when the agent is developing consumer contracts with this skill and when the user asks about security, bias resistance, gas limit sizing, request cancellation, or production readiness.
 8. Read [references/official-sources.md](references/official-sources.md) only when the answer depends on live data the reference files do not contain.
 9. Do not load reference files speculatively.
 
@@ -79,7 +79,7 @@ This skill references official VRF documentation URLs throughout its reference f
 
 1. Generate working code from knowledge and reference files first. Fetch only when a specific detail is missing.
 2. Treat 0-1 fetches as normal, 2-3 as the ceiling. Most questions need no fetches because the reference files contain the implementation guidance.
-3. When a fetch is needed, apply the cascade: WebFetch first; if it returns <1000 chars of useful content, fall back to `curl -s -L -A "Mozilla/5.0 ..." "<url>"`; if both fail, report the URL to the user.
+3. When a fetch is needed, apply the cascade: WebFetch first; if it returns <1000 chars of useful content, fall back to `curl -s -L -A "Mozilla/5.0 ..." "<url>"`; if both fail, fall back to context7.
 4. Keep answers proportional — a simple "request a random number" question gets a code block and brief explanation, not a full tutorial.
 5. Generate code only when code is actually needed.
 6. If the user asks to write, build, create, or show a VRF contract or snippet without naming a repository path or file to edit, answer inline with code. Do not ask for filesystem write approval unless the user explicitly asks you to modify files.

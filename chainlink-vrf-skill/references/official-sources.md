@@ -7,7 +7,6 @@ Use these URLs when reference files do not contain the specific information need
 | Topic                                | URL                                                                    |
 | ------------------------------------ | ---------------------------------------------------------------------- |
 | VRF Overview                         | https://docs.chain.link/vrf.md                                         |
-| VRF v2.5 Overview                    | https://docs.chain.link/vrf/v2-5/overview.md                           |
 | Subscription — Get a Random Number   | https://docs.chain.link/vrf/v2-5/subscription/get-a-random-number.md   |
 | Direct Funding — Get a Random Number | https://docs.chain.link/vrf/v2-5/direct-funding/get-a-random-number.md |
 | Migrating from V2 to v2.5            | https://docs.chain.link/vrf/v2-5/migration-from-v2.md                  |
@@ -18,14 +17,7 @@ Use these URLs when reference files do not contain the specific information need
 
 ## Contract Source Code
 
-Contracts live in the [chainlink-evm](https://github.com/smartcontractkit/chainlink-evm) repo. Use a tagged release, not `develop`:
-
-```
-https://github.com/smartcontractkit/chainlink-evm/blob/contracts-v1.5.0/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol
-https://github.com/smartcontractkit/chainlink-evm/blob/contracts-v1.5.0/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol
-https://github.com/smartcontractkit/chainlink-evm/blob/contracts-v1.5.0/contracts/src/v0.8/vrf/dev/VRFV2PlusWrapperConsumerBase.sol
-https://github.com/smartcontractkit/chainlink-evm/blob/contracts-v1.5.0/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol
-```
+Contracts live in the [chainlink-evm](https://github.com/smartcontractkit/chainlink-evm) repo. Use a tagged release, not `develop`.
 
 See [chainlink-evm releases](https://github.com/smartcontractkit/chainlink-evm/releases) for available `contracts-v*` tags.
 
